@@ -1,21 +1,45 @@
 var http = require('http');
 var fs = require('fs');
+var extract = require('./extract');
+var mime = require('mime');
+var wss = require('./websockets-server');
+
+
 
 var server = http.createServer(function(req, res){
 
-  var url = req.url;
+  console.log('Responding to request');
 
-  var fileName = 'index.html';
+  var filePath = extract(req.url);
 
-  if(url.length > 1){
-    fileName = url.substring(1);
-  }
+  var contentType = mime.getType(filePath);
 
-  console.log(fileName);
-  
-  fs.readFile('app/index.html', function(err, data){
+  fs.readFile(filePath, function(err, data){
+
+    if(err){
+      handleError(err, res);
+    }else{
+      res.setHeader('Content-Type', contentType)
+      res.end(data);
+    }
+  });
+});
+
+var handleError = function(err, res){
+
+  var errfileName = 'app/notFound.html';
+
+  console.log('The error fileName is: ' + errfileName);
+
+  var contentType = mime.getType(errfileName);
+
+  fs.readFile(errfileName, function(err, data){
+    res.statusCode = 404;
+    res.setHeader('Content-Type', contentType)
     res.end(data);
   })
-});
+
+}
+
 
 server.listen(3000);
